@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-criterio-negro text-criterio-texto font-body antialiased;
+  }
+
+  * {
+    @apply border-criterio-gris3;
+  }
+
+  input, select, textarea {
+    @apply bg-criterio-gris2 text-criterio-blanco border border-criterio-gris3 rounded-lg px-4 py-3 w-full
+           focus:outline-none focus:border-criterio-acento transition-colors duration-200 font-body;
+  }
+
+  button {
+    @apply transition-all duration-200 font-body;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-criterio-gris rounded-2xl border border-criterio-gris3 p-6;
+  }
+
+  .btn-primary {
+    @apply bg-criterio-acento text-criterio-negro font-semibold px-6 py-3 rounded-xl
+           hover:bg-criterio-acento2 active:scale-95 w-full;
+  }
+
+  .btn-secondary {
+    @apply bg-criterio-gris2 text-criterio-texto border border-criterio-gris3 font-medium px-6 py-3 rounded-xl
+           hover:border-criterio-acento hover:text-criterio-acento active:scale-95;
+  }
+
+  .btn-danger {
+    @apply bg-red-900/30 text-red-400 border border-red-800 font-medium px-4 py-2 rounded-lg
+           hover:bg-red-900/50 active:scale-95 text-sm;
+  }
+
+  .stat-card {
+    @apply card flex flex-col gap-1;
+  }
+
+  .stat-label {
+    @apply text-xs font-mono text-criterio-texto/60 uppercase tracking-widest;
+  }
+
+  .stat-value {
+    @apply text-2xl font-display font-semibold text-criterio-blanco;
+  }
+
+  .stat-value-accent {
+    @apply text-2xl font-display font-semibold text-criterio-acento;
+  }
+
+  .section-title {
+    @apply font-display text-xl font-semibold text-criterio-blanco mb-4;
+  }
+
+  .badge-tipo {
+    @apply text-xs font-mono px-2 py-1 rounded-full;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1a1a1a; }
+::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #c8a96e; }
+
+/* Animaciones */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
