@@ -121,6 +121,7 @@ export default function GerenciaDashboard() {
   const totalEgresos=totalGastos+alquiler+servicios+otros+sueldoEmp+sueldoEncargada
   const resultado=totalVentas-totalEgresos
   const saldoCaja=ventasEf-gastosEf-entregaEf-entregaTrans+ingresoCaja
+  const stockLocal=mercaderia-totalVentas
 
   async function guardarGF(e) {
     e.preventDefault(); setGuardandoGF(true)
@@ -263,6 +264,19 @@ export default function GerenciaDashboard() {
                   <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest mt-2">Total egresos</p>
                   <p className="text-2xl font-display text-red-400 mt-1">{formatPesoFull(totalEgresos)}</p>
                 </div>
+              </div>
+            </div>
+
+            {/* Stock */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="card border border-blue-800">
+                <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Mercadería recibida</p>
+                <p className="text-2xl font-display font-semibold text-blue-400 mt-1">{formatPesoFull(mercaderia)}</p>
+              </div>
+              <div className="card border border-blue-600">
+                <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Stock en local</p>
+                <p className="text-2xl font-display font-bold text-blue-300 mt-1">{formatPesoFull(stockLocal)}</p>
+                <p className="text-xs font-mono text-criterio-texto/40 mt-1">mercadería − ventas del mes</p>
               </div>
             </div>
 
