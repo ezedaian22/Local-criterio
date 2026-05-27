@@ -121,7 +121,8 @@ export default function GerenciaDashboard() {
   const totalEgresos=totalGastos+alquiler+servicios+otros+sueldoEmp+sueldoEncargada
   const resultado=totalVentas-totalEgresos
   const saldoCaja=ventasEf-gastosEf-entregaEf-entregaTrans+ingresoCaja
-  const stockLocal=mercaderia-totalVentas
+  const devolucion=totales.devolucion||0
+  const stockLocal=mercaderia-totalVentas+devolucion
 
   async function guardarGF(e) {
     e.preventDefault(); setGuardandoGF(true)
