@@ -55,7 +55,8 @@ export default function EncargadaDashboard() {
   const totalVentas = ventasEf + ventasTrans
   const cantVentas  = movimientos.filter(m => m.tipo.startsWith('venta')).length
   const saldoCaja   = ventasEf - gastosEf - entregaEf - entregaTrans + ingresoCaja
-  const stockLocal  = mercaderia - totalVentas
+  const devolucion  = totales.devolucion || 0
+  const stockLocal  = mercaderia - totalVentas + devolucion
 
   async function handleGuardar(e) {
     e.preventDefault()
@@ -132,6 +133,7 @@ export default function EncargadaDashboard() {
                   </optgroup>
                   <optgroup label="Stock">
                     <option value="mercaderia_recibida">Mercadería Recibida</option>
+                    <option value="devolucion">Devolución (mercadería devuelta)</option>
                   </optgroup>
                 </select>
               </div>
