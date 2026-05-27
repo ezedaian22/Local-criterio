@@ -9,6 +9,7 @@ const TIPO_CONFIG = {
   entrega_dueno_efectivo:      { label: 'Entrega Dueño Ef.',     color: 'bg-yellow-900/40 text-yellow-400' },
   entrega_dueno_transferencia: { label: 'Entrega Dueño Trans.',  color: 'bg-yellow-900/40 text-yellow-400' },
   ingreso_caja:                { label: 'Ingreso a Caja',        color: 'bg-purple-900/40 text-purple-400' },
+  devolucion:                  { label: 'Devolución',             color: 'bg-orange-900/40 text-orange-400' },
 }
 
 export { TIPO_CONFIG }
