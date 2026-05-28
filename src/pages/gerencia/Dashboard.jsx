@@ -37,6 +37,7 @@ export default function GerenciaDashboard() {
   const [formGF, setFormGF] = useState({ alquiler:'', servicios:'', otros:'', sueldo_empleado_fabrica:'', sueldo_minimo_encargada:'1500000' })
   const [config, setConfig] = useState({ comision_pct: 3 })
   const [guardandoConfig, setGuardandoConfig] = useState(false)
+  const [configId, setConfigId] = useState(null)
   // Comparar
   const [cmpModo, setCmpModo] = useState('mes') // mes | anio | periodo
   const [cmpMes1, setCmpMes1] = useState(hoy.getMonth() > 0 ? hoy.getMonth()-1 : 0)
@@ -103,7 +104,16 @@ export default function GerenciaDashboard() {
     setResumenAnual(porMes)
   }, [localSel])
 
-  useEffect(() => { cargarMovimientos(); cargarGastosFijos(); cargarAnual() }, [cargarMovimientos, cargarGastosFijos, cargarAnual])
+  const cargarConfig = useCallback(async () => {
+    if (!localSel) return
+    const {data} = await supabase.from('configuracion').select('*').eq('local_id', localSel.id).single()
+    if (data) {
+      setConfig({ comision_pct: data.comision_pct })
+      setConfigId(data.id)
+    }
+  }, [localSel])
+
+  useEffect(() => { cargarMovimientos(); cargarGastosFijos(); cargarAnual(); cargarConfig() }, [cargarMovimientos, cargarGastosFijos, cargarAnual, cargarConfig])
 
   // Totales mes
   const totales = movimientos.reduce((acc,m) => { acc[m.tipo]=(acc[m.tipo]||0)+Number(m.monto); return acc }, {})
@@ -140,13 +150,21 @@ export default function GerenciaDashboard() {
   }
 
   async function guardarConfig(e) {
-    e.preventDefault(); setGuardandoConfig(true)
-    // Store config in gastos_fijos as extra field or separate table
-    // For now just save in state and gastos_fijos
-    const payload = { local_id:localSel.id, mes:mesIdx+1, anio:AÑO, comision_pct:config.comision_pct, updated_at:new Date().toISOString() }
-    if (gastosFijos?.id) await supabase.from('gastos_fijos').update({ comision_pct:config.comision_pct }).eq('id',gastosFijos.id)
+    e.preventDefault()
+    setGuardandoConfig(true)
+    if (configId) {
+      await supabase.from('configuracion')
+        .update({ comision_pct: config.comision_pct, updated_at: new Date().toISOString() })
+        .eq('id', configId)
+    } else {
+      const {data} = await supabase.from('configuracion')
+        .insert({ local_id: localSel.id, comision_pct: config.comision_pct })
+        .select().single()
+      if (data) setConfigId(data.id)
+    }
+    await cargarConfig()
     setGuardandoConfig(false)
-    alert('Configuración guardada')
+    alert('✅ Configuración guardada correctamente')
   }
 
   async function handleEliminarMov(id) {
