@@ -113,6 +113,13 @@ export default function GerenciaDashboard() {
   const entregaEf=totales.entrega_dueno_efectivo||0, entregaTrans=totales.entrega_dueno_transferencia||0
   const ingresoCaja=totales.ingreso_caja||0
   const cantVentas=movimientos.filter(m=>m.tipo.startsWith('venta')).length
+  const hoyStr=format(new Date(),'yyyy-MM-dd')
+  const movHoy=movimientos.filter(m=>m.fecha===hoyStr)
+  const totHoy=movHoy.reduce((acc,m)=>{acc[m.tipo]=(acc[m.tipo]||0)+Number(m.monto);return acc},{})
+  const ventasHoy=(totHoy.venta_efectivo||0)+(totHoy.venta_transferencia||0)
+  const gastosHoy=(totHoy.gasto_efectivo||0)+(totHoy.gasto_transferencia||0)
+  const cantVentasHoy=movHoy.filter(m=>m.tipo.startsWith('venta')).length
+  const saldoCajaHoy=(totHoy.venta_efectivo||0)-(totHoy.gasto_efectivo||0)-(totHoy.entrega_dueno_efectivo||0)+(totHoy.ingreso_caja||0)
   const totalVentas=ventasEf+ventasTrans, totalGastos=gastosEf+gastosTrans
   const alquiler=Number(formGF.alquiler||0), servicios=Number(formGF.servicios||0), otros=Number(formGF.otros||0)
   const sueldoEmp=Number(formGF.sueldo_empleado_fabrica||0), sueldoMin=Number(formGF.sueldo_minimo_encargada||1500000)
@@ -278,6 +285,33 @@ export default function GerenciaDashboard() {
                 <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Stock en local</p>
                 <p className="text-2xl font-display font-bold text-blue-300 mt-1">{formatPesoFull(stockLocal)}</p>
                 <p className="text-xs font-mono text-criterio-texto/40 mt-1">mercadería − ventas del mes</p>
+              </div>
+            </div>
+
+            {/* Resumen del día */}
+            <div className="card border border-criterio-acento/30">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 rounded-full bg-criterio-acento animate-pulse"></div>
+                <h3 className="font-display text-lg font-semibold text-criterio-blanco">Resumen de hoy</h3>
+                <span className="text-criterio-texto/40 font-mono text-xs ml-auto">{format(new Date(), "d 'de' MMMM", {locale:es})}</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Ventas hoy</p>
+                  <p className="text-xl font-display font-bold text-criterio-acento mt-1">{formatPesoFull(ventasHoy)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Gastos hoy</p>
+                  <p className="text-xl font-display font-bold text-red-400 mt-1">{formatPesoFull(gastosHoy)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Cant. ventas hoy</p>
+                  <p className="text-2xl font-display font-bold text-criterio-blanco mt-1">{cantVentasHoy}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Caja hoy</p>
+                  <p className={`text-xl font-display font-bold mt-1 ${saldoCajaHoy>=0?'text-green-400':'text-red-400'}`}>{formatPesoFull(saldoCajaHoy)}</p>
+                </div>
               </div>
             </div>
 
