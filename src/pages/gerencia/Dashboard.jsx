@@ -1,3 +1,4 @@
+// v2.1 - proyeccion al cierre
 import { useState, useEffect, useCallback } from 'react'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
