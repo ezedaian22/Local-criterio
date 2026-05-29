@@ -265,12 +265,13 @@ export default function GerenciaDashboard() {
         {/* RESUMEN */}
         {tab==='resumen' && (
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
                 ['Ventas efectivo', ventasEf, 'text-criterio-acento'],
                 ['Ventas transf.', ventasTrans, 'text-criterio-acento'],
                 ['Cantidad ventas', cantVentas, 'text-criterio-blanco', true],
                 ['Ingreso a caja', ingresoCaja, 'text-purple-400'],
+                ['Entregado', entregaEf+entregaTrans, 'text-yellow-400'],
               ].map(([l,v,c,isNum])=>(
                 <div key={l} className="card flex flex-col gap-1">
                   <span className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">{l}</span>
@@ -377,6 +378,12 @@ export default function GerenciaDashboard() {
                         <td className="text-criterio-texto/50 uppercase tracking-widest pr-4 py-2">Gastos</td>
                         {dias.map(([fecha, d]) => (
                           <td key={fecha} className="text-red-400 text-center px-3 py-2 whitespace-nowrap">{formatPeso(d.gastos)}</td>
+                        ))}
+                      </tr>
+                      <tr className="border-t border-criterio-gris3/30">
+                        <td className="text-criterio-texto/50 uppercase tracking-widest pr-4 py-2">Entregado</td>
+                        {dias.map(([fecha, d]) => (
+                          <td key={fecha} className="text-yellow-400 text-center px-3 py-2 whitespace-nowrap">{formatPeso(d.entregado||0)}</td>
                         ))}
                       </tr>
                       <tr className="border-t border-criterio-gris3/30">
