@@ -173,9 +173,39 @@ export default function GerenciaDashboard() {
   const stockLocal=mercaderia-totalVentas+devolucion
 
   async function cerrarMes() {
-    if (!confirm(`¿Cerrar ${MESES[mesIdx]} ${ANO}? Una vez cerrado no se podrá editar.`)) return
+    // Build summary message
+    const resumen = [
+      `📊 RESUMEN AL CIERRE — ${MESES[mesIdx]} ${ANO}`,
+      ``,
+      `💰 VENTAS`,
+      `  Efectivo:       ${formatPesoFull(ventasEf)}`,
+      `  Transferencia:  ${formatPesoFull(ventasTrans)}`,
+      `  TOTAL:          ${formatPesoFull(totalVentas)}`,
+      `  Cant. ventas:   ${cantVentas}`,
+      ``,
+      `📉 EGRESOS`,
+      `  Gastos locales: ${formatPesoFull(totalGastos)}`,
+      `  Alquiler:       ${formatPesoFull(alquiler)}`,
+      `  Servicios:      ${formatPesoFull(servicios)}`,
+      `  Otros:          ${formatPesoFull(otros)}`,
+      `  Sueldo empleado:${formatPesoFull(sueldoEmp)}`,
+      `  Sueldo encarg.: ${formatPesoFull(sueldoEncargada)}`,
+      `  TOTAL:          ${formatPesoFull(totalEgresos)}`,
+      ``,
+      `⚖️ RESULTADO NETO: ${formatPesoFull(resultado)}`,
+      ``,
+      `📦 Stock en local:  ${formatPesoFull(stockLocal)}`,
+      `🏦 Saldo en caja:   ${formatPesoFull(saldoCaja)}`,
+      ``,
+      `⚠️ Los movimientos del 30 y 31 siguen cargándose normalmente.`,
+      `Solo se bloquea la edición de gastos fijos.`,
+      ``,
+      `¿Confirmar cierre?`,
+    ].join('
+')
+
+    if (!confirm(resumen)) return
     setCerrando(true)
-    // First save current gastos fijos if not saved
     const payload = { local_id:localSel.id, mes:mesIdx+1, anio:ANO, alquiler:Number(formGF.alquiler)||0, servicios:Number(formGF.servicios)||0, otros:Number(formGF.otros)||0, sueldo_empleado_fabrica:Number(formGF.sueldo_empleado_fabrica)||0, sueldo_minimo_encargada:Number(formGF.sueldo_minimo_encargada)||1500000, cerrado:true, fecha_cierre:new Date().toISOString(), updated_at:new Date().toISOString() }
     if (gastosFijos?.id) {
       await supabase.from('gastos_fijos').update(payload).eq('id', gastosFijos.id)
@@ -185,7 +215,9 @@ export default function GerenciaDashboard() {
     await cargarGastosFijos()
     await cargarMesesCerrados()
     setCerrando(false)
-    alert(`✅ ${MESES[mesIdx]} ${ANO} cerrado correctamente.`)
+    alert(`✅ ${MESES[mesIdx]} ${ANO} cerrado correctamente.
+
+Los movimientos del resto del mes siguen disponibles.`)
   }
 
   async function guardarGF(e) {
