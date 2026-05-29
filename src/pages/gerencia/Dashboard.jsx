@@ -31,6 +31,8 @@ export default function GerenciaDashboard() {
   const [resumenAnual, setResumenAnual] = useState([])
   const [tab, setTab] = useState('resumen')
   const [guardandoGF, setGuardandoGF] = useState(false)
+  const [cerrando, setCerrando] = useState(false)
+  const [mesesCerrados, setMesesCerrados] = useState({})
   const [editandoMov, setEditandoMov] = useState(null)
   const [formMov, setFormMov] = useState({ tipo:'venta_efectivo', monto:'', descripcion:'' })
   const [showFormMov, setShowFormMov] = useState(false)
@@ -105,6 +107,17 @@ export default function GerenciaDashboard() {
     setResumenAnual(porMes)
   }, [localSel])
 
+  const cargarMesesCerrados = useCallback(async () => {
+    if (!localSel) return
+    const {data} = await supabase.from('gastos_fijos').select('mes,anio,cerrado,fecha_cierre')
+      .eq('local_id', localSel.id).eq('anio', AÑO)
+    if (data) {
+      const map = {}
+      data.forEach(d => { map[d.mes] = d.cerrado })
+      setMesesCerrados(map)
+    }
+  }, [localSel])
+
   const cargarConfig = useCallback(async () => {
     if (!localSel) return
     const {data} = await supabase.from('configuracion').select('*').eq('local_id', localSel.id).single()
@@ -114,7 +127,7 @@ export default function GerenciaDashboard() {
     }
   }, [localSel])
 
-  useEffect(() => { cargarMovimientos(); cargarGastosFijos(); cargarAnual(); cargarConfig() }, [cargarMovimientos, cargarGastosFijos, cargarAnual, cargarConfig])
+  useEffect(() => { cargarMovimientos(); cargarGastosFijos(); cargarAnual(); cargarConfig(); cargarMesesCerrados() }, [cargarMovimientos, cargarGastosFijos, cargarAnual, cargarConfig, cargarMesesCerrados])
 
   useEffect(() => {
     if (projInicializado || movimientos.length === 0) return
@@ -158,8 +171,26 @@ export default function GerenciaDashboard() {
   const devolucion=totales.devolucion||0
   const stockLocal=mercaderia-totalVentas+devolucion
 
+  async function cerrarMes() {
+    if (!confirm(`¿Cerrar ${MESES[mesIdx]} ${AÑO}? Una vez cerrado no se podrá editar.`)) return
+    setCerrando(true)
+    // First save current gastos fijos if not saved
+    const payload = { local_id:localSel.id, mes:mesIdx+1, anio:AÑO, alquiler:Number(formGF.alquiler)||0, servicios:Number(formGF.servicios)||0, otros:Number(formGF.otros)||0, sueldo_empleado_fabrica:Number(formGF.sueldo_empleado_fabrica)||0, sueldo_minimo_encargada:Number(formGF.sueldo_minimo_encargada)||1500000, cerrado:true, fecha_cierre:new Date().toISOString(), updated_at:new Date().toISOString() }
+    if (gastosFijos?.id) {
+      await supabase.from('gastos_fijos').update(payload).eq('id', gastosFijos.id)
+    } else {
+      await supabase.from('gastos_fijos').insert(payload)
+    }
+    await cargarGastosFijos()
+    await cargarMesesCerrados()
+    setCerrando(false)
+    alert(`✅ ${MESES[mesIdx]} ${AÑO} cerrado correctamente.`)
+  }
+
   async function guardarGF(e) {
-    e.preventDefault(); setGuardandoGF(true)
+    e.preventDefault()
+    if (mesesCerrados[mesIdx+1]) { alert('Este mes ya está cerrado y no se puede editar.'); return }
+    setGuardandoGF(true)
     const payload = { local_id:localSel.id, mes:mesIdx+1, anio:AÑO, alquiler:Number(formGF.alquiler)||0, servicios:Number(formGF.servicios)||0, otros:Number(formGF.otros)||0, sueldo_empleado_fabrica:Number(formGF.sueldo_empleado_fabrica)||0, sueldo_minimo_encargada:Number(formGF.sueldo_minimo_encargada)||1500000, updated_at:new Date().toISOString() }
     if (gastosFijos?.id) await supabase.from('gastos_fijos').update(payload).eq('id',gastosFijos.id)
     else await supabase.from('gastos_fijos').insert(payload)
@@ -266,7 +297,11 @@ export default function GerenciaDashboard() {
             ))}
           </div>
           <select value={mesIdx} onChange={e=>setMesIdx(Number(e.target.value))} className="w-auto">
-            {MESES.map((m,i)=><option key={i} value={i}>{m} {AÑO}</option>)}
+            {MESES.map((m,i)=>(
+              <option key={i} value={i}>
+                {mesesCerrados[i+1] ? '✅' : '○'} {m} {AÑO}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -518,10 +553,22 @@ export default function GerenciaDashboard() {
               {[['alquiler','Alquiler ($)'],['servicios','Servicios / Expensas ($)'],['otros','Otros gastos fijos ($)'],['sueldo_empleado_fabrica','Sueldo Empleado Fábrica ($)'],['sueldo_minimo_encargada','Sueldo Mínimo Encargada ($)']].map(([k,l])=>(
                 <div key={k}>
                   <label className="text-xs font-mono text-criterio-texto/50 uppercase tracking-widest block mb-2">{l}</label>
-                  <input type="number" value={formGF[k]} onChange={e=>setFormGF(f=>({...f,[k]:e.target.value}))} placeholder="0" min="0" />
+                  <input type="number" value={formGF[k]} onChange={e=>setFormGF(f=>({...f,[k]:e.target.value}))} placeholder="0" min="0" disabled={!!mesesCerrados[mesIdx+1]} className={mesesCerrados[mesIdx+1]?'opacity-50 cursor-not-allowed':''} />
                 </div>
               ))}
-              <button type="submit" className="btn-primary" disabled={guardandoGF}>{guardandoGF?'Guardando...':'Guardar gastos fijos'}</button>
+              {mesesCerrados[mesIdx+1] ? (
+                <div className="bg-green-900/30 border border-green-700 rounded-xl px-4 py-3 text-center">
+                  <p className="text-green-400 font-mono text-sm">✅ Mes cerrado — solo lectura</p>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <button type="submit" className="btn-primary flex-1" disabled={guardandoGF}>{guardandoGF?'Guardando...':'Guardar gastos fijos'}</button>
+                  <button type="button" onClick={cerrarMes} disabled={cerrando}
+                    className="px-4 py-3 rounded-xl font-mono text-sm border border-criterio-acento text-criterio-acento hover:bg-criterio-acento hover:text-criterio-negro transition-colors">
+                    {cerrando?'Cerrando...':'Cerrar mes'}
+                  </button>
+                </div>
+              )}
             </form>
             <div className="mt-6 pt-6 border-t border-criterio-gris3">
               <h4 className="text-xs font-mono text-criterio-texto/50 uppercase tracking-widest mb-3">Resumen egresos</h4>
