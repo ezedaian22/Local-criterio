@@ -265,16 +265,16 @@ export default function GerenciaDashboard() {
         {/* RESUMEN */}
         {tab==='resumen' && (
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                ['Ventas ef.', ventasEf, 'text-criterio-acento'],
-                ['Ventas trans.', ventasTrans, 'text-criterio-acento'],
-                ['Cant. ventas', cantVentas, 'text-criterio-blanco', true],
-                ['Ingreso caja', ingresoCaja, 'text-purple-400'],
+                ['Ventas efectivo', ventasEf, 'text-criterio-acento'],
+                ['Ventas transf.', ventasTrans, 'text-criterio-acento'],
+                ['Cantidad ventas', cantVentas, 'text-criterio-blanco', true],
+                ['Ingreso a caja', ingresoCaja, 'text-purple-400'],
               ].map(([l,v,c,isNum])=>(
-                <div key={l} className="bg-criterio-gris border border-criterio-gris3 rounded-xl px-4 py-3 flex flex-col gap-0.5">
-                  <span className="text-[10px] font-mono text-criterio-texto/50 uppercase tracking-widest">{l}</span>
-                  <span className={`text-lg font-display font-semibold ${c}`}>{isNum ? v : formatPesoFull(v)}</span>
+                <div key={l} className="card flex flex-col gap-1">
+                  <span className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">{l}</span>
+                  <span className={`text-xl font-display font-semibold ${c}`}>{isNum ? v : formatPesoFull(v)}</span>
                 </div>
               ))}
             </div>
