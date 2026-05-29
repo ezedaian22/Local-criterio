@@ -817,58 +817,103 @@ Los movimientos del resto del mes siguen disponibles.`)
         {/* PROYECCIÓN */}
         {tab==='proyeccion' && (
           <div className="flex flex-col gap-4">
-            <div className="card">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-display text-lg font-semibold text-criterio-blanco">Calculadora de rentabilidad</h3>
-                <button onClick={()=>{
-                  const totalV=(totales.venta_efectivo||0)+(totales.venta_transferencia||0)
-                  const cantV=movimientos.filter(m=>m.tipo.startsWith('venta')).length
-                  const dias=new Date().getDate()
-                  const tots2=movimientos.reduce((acc,m)=>{acc[m.tipo]=(acc[m.tipo]||0)+Number(m.monto);return acc},{})
-                  const totalGV2=(tots2.gasto_efectivo||0)+(tots2.gasto_transferencia||0)
-                  const gastosVarD=dias>0?Math.round(totalGV2/dias):0
-                  setProj(p=>({...p,
-                    ticket:cantV>0?Math.round(totalV/cantV):160000,
-                    clientes:cantV>0&&dias>0?Math.max(1,Math.round(cantV/dias)):4,
-                    costos:Math.round(alquiler+servicios+otros+sueldoEmp+sueldoEncargada)||5500000,
-                    gastos_var:gastosVarD*25
-                  }))
-                }} className="text-xs font-mono text-criterio-acento border border-criterio-acento/30 px-3 py-1.5 rounded-lg hover:border-criterio-acento">
-                  ↺ Valores reales
-                </button>
-              </div>
-              <p className="text-criterio-texto/40 font-mono text-xs mb-4">Arranca con tus datos reales del mes. Modificá los sliders para simular escenarios.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {[
-                  {key:'clientes',label:'Clientes por día',min:1,max:20,step:1,suffix:''},
-                  {key:'ticket',label:'Ticket promedio ($)',min:10000,max:1000000,step:10000,suffix:''},
-                  {key:'margen',label:'Margen (%)',min:10,max:80,step:1,suffix:'%'},
-                  {key:'costos',label:'Costos fijos ($)',min:0,max:20000000,step:100000,suffix:''},
-                  {key:'gastos_var',label:'Gastos variables proyectados ($)',min:0,max:5000000,step:10000,suffix:''},
-                ].map(({key,label,min,max,step,suffix})=>(
-                  <div key={key}>
-                    <div className="flex justify-between mb-2">
-                      <label className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">{label}</label>
-                      <span className="font-mono text-criterio-acento text-sm">{key==='ticket'||key==='costos'?formatPesoFull(proj[key]):`${proj[key]}${suffix}`}</span>
+            {(() => {
+              const hoyD = new Date()
+              const diasTranscurridos = hoyD.getDate()
+              const diasEnMes = new Date(hoyD.getFullYear(), hoyD.getMonth()+1, 0).getDate()
+              const diasRestantes = diasEnMes - diasTranscurridos
+              const tots2 = movimientos.reduce((acc,m)=>{acc[m.tipo]=(acc[m.tipo]||0)+Number(m.monto);return acc},{})
+              const ventasReales = (tots2.venta_efectivo||0)+(tots2.venta_transferencia||0)
+              const gastosVarReales = (tots2.gasto_efectivo||0)+(tots2.gasto_transferencia||0)
+              const promedioVentaDiario = diasTranscurridos>0 ? ventasReales/diasTranscurridos : 0
+              const promedioGastoDiario = diasTranscurridos>0 ? gastosVarReales/diasTranscurridos : 0
+              // Proyección al cierre = lo real + promedio * días restantes (ajustable con slider)
+              const ventaResto = promedioVentaDiario * diasRestantes * (proj.clientes / Math.max(1, movimientos.filter(m=>m.tipo.startsWith('venta')).length / Math.max(1,diasTranscurridos)))
+              const ventaProyectadaMes = ventasReales + (promedioVentaDiario * diasRestantes)
+              const gastosVarProyectados = gastosVarReales + (promedioGastoDiario * diasRestantes)
+              const costosFijosTotal = alquiler+servicios+otros+sueldoEmp+sueldoEncargada
+              const costoTotalMes = costosFijosTotal + gastosVarProyectados
+              const resultadoProyectado = ventaProyectadaMes*(proj.margen/100) - costoTotalMes
+
+              return (
+                <>
+                  {/* Info del mes */}
+                  <div className="card border border-criterio-acento/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-display text-lg font-semibold text-criterio-blanco">Proyección al cierre — {MESES[mesIdx]}</h3>
+                      <div className="text-right">
+                        <p className="text-xs font-mono text-criterio-texto/40">Día {diasTranscurridos} de {diasEnMes}</p>
+                        <p className="text-xs font-mono text-criterio-acento">{diasRestantes} días restantes</p>
+                      </div>
                     </div>
-                    <input type="range" min={min} max={max} step={step} value={proj[key]} onChange={e=>setProj(p=>({...p,[key]:Number(e.target.value)}))} className="w-full accent-criterio-acento bg-transparent border-none p-0 cursor-pointer" />
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                      <div>
+                        <p className="text-xs font-mono text-criterio-texto/50 uppercase tracking-widest">Ventas reales</p>
+                        <p className="text-lg font-display text-criterio-acento mt-1">{formatPesoFull(ventasReales)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-mono text-criterio-texto/50 uppercase tracking-widest">Prom. diario</p>
+                        <p className="text-lg font-display text-criterio-texto mt-1">{formatPesoFull(promedioVentaDiario)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-mono text-criterio-texto/50 uppercase tracking-widest">Ventas esperadas resto</p>
+                        <p className="text-lg font-display text-criterio-acento/70 mt-1">+ {formatPesoFull(promedioVentaDiario * diasRestantes)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-mono text-criterio-texto/50 uppercase tracking-widest">Venta total estimada</p>
+                        <p className="text-xl font-display font-bold text-criterio-acento mt-1">{formatPesoFull(ventaProyectadaMes)}</p>
+                      </div>
+                    </div>
+                    <div className={`rounded-xl px-4 py-3 border ${resultadoProyectado>=0?'border-green-700 bg-green-900/20':'border-red-700 bg-red-900/20'}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-mono text-criterio-texto/50 uppercase tracking-widest">Resultado proyectado al cierre</p>
+                          <p className={`text-2xl font-display font-bold mt-1 ${resultadoProyectado>=0?'text-green-400':'text-red-400'}`}>{formatPesoFull(resultadoProyectado)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-mono text-criterio-texto/50">Costos fijos</p>
+                          <p className="font-mono text-sm text-red-400">{formatPesoFull(costosFijosTotal)}</p>
+                          <p className="text-xs font-mono text-criterio-texto/50 mt-1">Gastos var. proy.</p>
+                          <p className="font-mono text-sm text-red-400">{formatPesoFull(gastosVarProyectados)}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="card"><p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Venta proyectada</p><p className="text-xl font-display font-semibold text-criterio-acento mt-1">{formatPesoFull(ventaProyectada)}</p></div>
-              <div className="card">
-                <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Costo total</p>
-                <p className="text-xl font-display text-red-400 mt-1">{formatPesoFull(costoTotal)}</p>
-                <p className="text-[10px] font-mono text-criterio-texto/30 mt-1">fijos + variables</p>
-              </div>
-              <div className="card"><p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Punto de equilibrio</p><p className="text-xl font-display text-criterio-texto mt-1">{formatPesoFull(equilibrio)}</p></div>
-              <div className={`card border ${gananciaProyectada>=0?'border-green-700':'border-red-700'}`}>
-                <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Ganancia neta</p>
-                <p className={`text-2xl font-display font-bold mt-1 ${gananciaProyectada>=0?'text-green-400':'text-red-400'}`}>{formatPesoFull(gananciaProyectada)}</p>
-              </div>
-            </div>
+
+                  {/* Simulador */}
+                  <div className="card">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-display text-base font-semibold text-criterio-blanco">Simulador de escenarios</h3>
+                      <span className="text-xs font-mono text-criterio-texto/40">Ajustá para ver qué pasa si...</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      {[
+                        {key:'margen',label:'Margen (%)',min:10,max:80,step:1,suffix:'%',fmt:v=>`${v}%`},
+                        {key:'costos',label:'Costos fijos simulados ($)',min:0,max:20000000,step:100000,suffix:'',fmt:v=>formatPesoFull(v)},
+                      ].map(({key,label,min,max,step,fmt})=>(
+                        <div key={key}>
+                          <div className="flex justify-between mb-2">
+                            <label className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">{label}</label>
+                            <span className="font-mono text-criterio-acento text-sm">{fmt(proj[key])}</span>
+                          </div>
+                          <input type="range" min={min} max={max} step={step} value={proj[key]}
+                            onChange={e=>setProj(p=>({...p,[key]:Number(e.target.value)}))}
+                            className="w-full accent-criterio-acento bg-transparent border-none p-0 cursor-pointer" />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-criterio-gris3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-mono text-criterio-texto/50 uppercase tracking-widest">Resultado con estos cambios</span>
+                        <span className={`font-mono text-xl font-bold ${(ventaProyectadaMes*(proj.margen/100)-proj.costos-gastosVarProyectados)>=0?'text-green-400':'text-red-400'}`}>
+                          {formatPesoFull(ventaProyectadaMes*(proj.margen/100)-proj.costos-gastosVarProyectados)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )
+            })()}
           </div>
         )}
 
