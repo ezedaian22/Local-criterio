@@ -34,6 +34,7 @@ export default function GerenciaDashboard() {
   const [editandoMov, setEditandoMov] = useState(null)
   const [formMov, setFormMov] = useState({ tipo:'venta_efectivo', monto:'', descripcion:'' })
   const [showFormMov, setShowFormMov] = useState(false)
+  const [filtroMov, setFiltroMov] = useState('todos')
   const [formGF, setFormGF] = useState({ alquiler:'', servicios:'', otros:'', sueldo_empleado_fabrica:'', sueldo_minimo_encargada:'1500000' })
   const [config, setConfig] = useState({ comision_pct: 3 })
   const [guardandoConfig, setGuardandoConfig] = useState(false)
@@ -264,16 +265,16 @@ export default function GerenciaDashboard() {
         {/* RESUMEN */}
         {tab==='resumen' && (
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                ['Ventas efectivo', ventasEf, 'text-criterio-acento'],
-                ['Ventas transf.', ventasTrans, 'text-criterio-acento'],
-                ['Cantidad ventas', cantVentas, 'text-criterio-blanco', true],
-                ['Ingreso a caja', ingresoCaja, 'text-purple-400'],
+                ['Ventas ef.', ventasEf, 'text-criterio-acento'],
+                ['Ventas trans.', ventasTrans, 'text-criterio-acento'],
+                ['Cant. ventas', cantVentas, 'text-criterio-blanco', true],
+                ['Ingreso caja', ingresoCaja, 'text-purple-400'],
               ].map(([l,v,c,isNum])=>(
-                <div key={l} className="card flex flex-col gap-1">
-                  <span className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">{l}</span>
-                  <span className={`text-xl font-display font-semibold ${c}`}>{isNum ? v : formatPesoFull(v)}</span>
+                <div key={l} className="bg-criterio-gris border border-criterio-gris3 rounded-xl px-4 py-3 flex flex-col gap-0.5">
+                  <span className="text-[10px] font-mono text-criterio-texto/50 uppercase tracking-widest">{l}</span>
+                  <span className={`text-lg font-display font-semibold ${c}`}>{isNum ? v : formatPesoFull(v)}</span>
                 </div>
               ))}
             </div>
@@ -333,6 +334,37 @@ export default function GerenciaDashboard() {
               </div>
             </div>
 
+            {/* Últimos 10 días */}
+            <div className="card p-4">
+              <h3 className="font-display text-base font-semibold text-criterio-blanco mb-3">Últimos 10 días</h3>
+              <div className="flex flex-col gap-1">
+                <div className="grid grid-cols-4 gap-2 mb-2">
+                  {['Fecha','Ventas','Gastos','Total'].map(h=>(
+                    <span key={h} className="text-[10px] font-mono text-criterio-texto/40 uppercase tracking-widest">{h}</span>
+                  ))}
+                </div>
+                {(() => {
+                  const diasMap = {}
+                  movimientos.forEach(m => {
+                    if (!diasMap[m.fecha]) diasMap[m.fecha] = { ventas:0, gastos:0 }
+                    if (m.tipo.startsWith('venta')) diasMap[m.fecha].ventas += Number(m.monto)
+                    if (m.tipo.startsWith('gasto')) diasMap[m.fecha].gastos += Number(m.monto)
+                  })
+                  return Object.entries(diasMap)
+                    .sort((a,b) => b[0].localeCompare(a[0]))
+                    .slice(0,10)
+                    .map(([fecha, d]) => (
+                      <div key={fecha} className="grid grid-cols-4 gap-2 py-1.5 border-b border-criterio-gris3/30">
+                        <span className="font-mono text-xs text-criterio-texto/60">{format(new Date(fecha+'T12:00:00'),'d MMM',{locale:es})}</span>
+                        <span className="font-mono text-xs text-green-400">{formatPeso(d.ventas)}</span>
+                        <span className="font-mono text-xs text-red-400">{formatPeso(d.gastos)}</span>
+                        <span className={`font-mono text-xs font-semibold ${d.ventas-d.gastos>=0?'text-criterio-acento':'text-red-400'}`}>{formatPeso(d.ventas-d.gastos)}</span>
+                      </div>
+                    ))
+                })()}
+              </div>
+            </div>
+
             {/* Control caja */}
             <div className="card">
               <h3 className="font-display text-lg font-semibold text-criterio-blanco mb-4">Control de Caja</h3>
@@ -378,25 +410,49 @@ export default function GerenciaDashboard() {
                 </form>
               </div>
             )}
-            {movimientos.length===0 ? (
-              <div className="card text-center py-8"><p className="text-criterio-texto/30 font-mono text-sm">Sin movimientos este mes</p></div>
-            ) : movimientos.map(mov=>{
-              const cfg=TIPO_CONFIG[mov.tipo]||{label:mov.tipo,color:'bg-gray-900/40 text-gray-400'}
-              return (
-                <div key={mov.id} className="card flex items-center justify-between gap-4 py-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className="text-criterio-texto/30 font-mono text-xs shrink-0">{format(new Date(mov.fecha+'T12:00:00'),'d MMM',{locale:es})}</span>
-                    <span className={`text-xs font-mono px-2 py-1 rounded-full shrink-0 ${cfg.color}`}>{cfg.label}</span>
-                    {mov.descripcion&&<span className="text-criterio-texto/50 text-sm truncate">{mov.descripcion}</span>}
+
+            {/* Filtros */}
+            <div className="flex gap-2 flex-wrap">
+              {[
+                ['todos','Todos'],
+                ['venta','Ventas'],
+                ['gasto','Gastos'],
+                ['mercaderia_recibida','Mercadería'],
+              ].map(([k,l])=>(
+                <button key={k} onClick={()=>setFiltroMov(k)}
+                  className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-colors ${filtroMov===k?'bg-criterio-acento text-criterio-negro':'bg-criterio-gris2 text-criterio-texto/60 hover:text-criterio-texto'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+
+            {(() => {
+              const filtrados = movimientos.filter(m => {
+                if (filtroMov === 'todos') return true
+                if (filtroMov === 'venta') return m.tipo.startsWith('venta')
+                if (filtroMov === 'gasto') return m.tipo.startsWith('gasto')
+                return m.tipo === filtroMov
+              })
+              return filtrados.length === 0 ? (
+                <div className="card text-center py-6"><p className="text-criterio-texto/30 font-mono text-sm">Sin movimientos</p></div>
+              ) : filtrados.map(mov => {
+                const cfg=TIPO_CONFIG[mov.tipo]||{label:mov.tipo,color:'bg-gray-900/40 text-gray-400'}
+                return (
+                  <div key={mov.id} className="bg-criterio-gris border border-criterio-gris3 rounded-xl flex items-center justify-between gap-3 px-4 py-2.5">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-criterio-texto/30 font-mono text-xs shrink-0">{format(new Date(mov.fecha+'T12:00:00'),'d MMM',{locale:es})}</span>
+                      <span className={`text-xs font-mono px-2 py-0.5 rounded-full shrink-0 ${cfg.color}`}>{cfg.label}</span>
+                      {mov.descripcion&&<span className="text-criterio-texto/50 text-xs truncate">{mov.descripcion}</span>}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-mono text-sm font-semibold text-criterio-blanco">{formatPesoFull(mov.monto)}</span>
+                      <button onClick={()=>{setEditandoMov(mov);setFormMov({tipo:mov.tipo,monto:String(mov.monto),descripcion:mov.descripcion||''});setShowFormMov(true)}} className="text-criterio-texto/40 hover:text-criterio-acento text-xs font-mono">editar</button>
+                      <button onClick={()=>handleEliminarMov(mov.id)} className="text-criterio-texto/40 hover:text-red-400 text-xs font-mono">✕</button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-mono font-semibold text-criterio-blanco">{formatPesoFull(mov.monto)}</span>
-                    <button onClick={()=>{setEditandoMov(mov);setFormMov({tipo:mov.tipo,monto:String(mov.monto),descripcion:mov.descripcion||''});setShowFormMov(true)}} className="text-criterio-texto/40 hover:text-criterio-acento text-xs font-mono">editar</button>
-                    <button onClick={()=>handleEliminarMov(mov.id)} className="text-criterio-texto/40 hover:text-red-400 text-xs font-mono">✕</button>
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })
+            })()}
           </div>
         )}
 
