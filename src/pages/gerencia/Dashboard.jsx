@@ -279,17 +279,21 @@ export default function GerenciaDashboard() {
               ))}
             </div>
 
-            <div className={`card border-2 ${resultado>=0?'border-green-700':'border-red-700'}`}>
-              <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className={`card py-3 border-2 ${resultado>=0?'border-green-700':'border-red-700'}`}>
+              <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Resultado neto</p>
-                  <p className={`text-4xl font-display font-bold mt-1 ${resultado>=0?'text-green-400':'text-red-400'}`}>{formatPesoFull(resultado)}</p>
+                  <p className={`text-2xl font-display font-bold mt-0.5 ${resultado>=0?'text-green-400':'text-red-400'}`}>{formatPesoFull(resultado)}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Total ingresos</p>
-                  <p className="text-2xl font-display text-green-400 mt-1">{formatPesoFull(totalVentas)}</p>
-                  <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest mt-2">Total egresos</p>
-                  <p className="text-2xl font-display text-red-400 mt-1">{formatPesoFull(totalEgresos)}</p>
+                <div className="flex gap-6 text-right">
+                  <div>
+                    <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Ingresos</p>
+                    <p className="text-lg font-display text-green-400 mt-0.5">{formatPesoFull(totalVentas)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Egresos</p>
+                    <p className="text-lg font-display text-red-400 mt-0.5">{formatPesoFull(totalEgresos)}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -334,35 +338,59 @@ export default function GerenciaDashboard() {
               </div>
             </div>
 
-            {/* Últimos 10 días */}
-            <div className="card p-4">
+            {/* Últimos 10 días — días en columnas, métricas en filas */}
+            <div className="card p-4 overflow-x-auto">
               <h3 className="font-display text-base font-semibold text-criterio-blanco mb-3">Últimos 10 días</h3>
-              <div className="flex flex-col gap-1">
-                <div className="grid grid-cols-4 gap-2 mb-2">
-                  {['Fecha','Ventas','Gastos','Total'].map(h=>(
-                    <span key={h} className="text-[10px] font-mono text-criterio-texto/40 uppercase tracking-widest">{h}</span>
-                  ))}
-                </div>
-                {(() => {
-                  const diasMap = {}
-                  movimientos.forEach(m => {
-                    if (!diasMap[m.fecha]) diasMap[m.fecha] = { ventas:0, gastos:0 }
-                    if (m.tipo.startsWith('venta')) diasMap[m.fecha].ventas += Number(m.monto)
-                    if (m.tipo.startsWith('gasto')) diasMap[m.fecha].gastos += Number(m.monto)
-                  })
-                  return Object.entries(diasMap)
-                    .sort((a,b) => b[0].localeCompare(a[0]))
-                    .slice(0,10)
-                    .map(([fecha, d]) => (
-                      <div key={fecha} className="grid grid-cols-4 gap-2 py-1.5 border-b border-criterio-gris3/30">
-                        <span className="font-mono text-xs text-criterio-texto/60">{format(new Date(fecha+'T12:00:00'),'d MMM',{locale:es})}</span>
-                        <span className="font-mono text-xs text-green-400">{formatPeso(d.ventas)}</span>
-                        <span className="font-mono text-xs text-red-400">{formatPeso(d.gastos)}</span>
-                        <span className={`font-mono text-xs font-semibold ${d.ventas-d.gastos>=0?'text-criterio-acento':'text-red-400'}`}>{formatPeso(d.ventas-d.gastos)}</span>
-                      </div>
-                    ))
-                })()}
-              </div>
+              {(() => {
+                const diasMap = {}
+                movimientos.forEach(m => {
+                  if (!diasMap[m.fecha]) diasMap[m.fecha] = { ventas:0, gastos:0 }
+                  if (m.tipo.startsWith('venta')) diasMap[m.fecha].ventas += Number(m.monto)
+                  if (m.tipo.startsWith('gasto')) diasMap[m.fecha].gastos += Number(m.monto)
+                })
+                const dias = Object.entries(diasMap)
+                  .sort((a,b) => b[0].localeCompare(a[0]))
+                  .slice(0,10)
+                
+                if (dias.length === 0) return <p className="text-criterio-texto/30 font-mono text-sm">Sin datos</p>
+
+                return (
+                  <table className="w-full font-mono text-xs min-w-max">
+                    <thead>
+                      <tr>
+                        <td className="text-criterio-texto/40 uppercase tracking-widest pr-4 py-1 text-left"></td>
+                        {dias.map(([fecha]) => (
+                          <td key={fecha} className="text-criterio-texto/60 text-center px-3 py-1 whitespace-nowrap">
+                            {format(new Date(fecha+'T12:00:00'),'d MMM',{locale:es})}
+                          </td>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-t border-criterio-gris3/30">
+                        <td className="text-criterio-texto/50 uppercase tracking-widest pr-4 py-2">Ventas</td>
+                        {dias.map(([fecha, d]) => (
+                          <td key={fecha} className="text-green-400 text-center px-3 py-2 whitespace-nowrap">{formatPeso(d.ventas)}</td>
+                        ))}
+                      </tr>
+                      <tr className="border-t border-criterio-gris3/30">
+                        <td className="text-criterio-texto/50 uppercase tracking-widest pr-4 py-2">Gastos</td>
+                        {dias.map(([fecha, d]) => (
+                          <td key={fecha} className="text-red-400 text-center px-3 py-2 whitespace-nowrap">{formatPeso(d.gastos)}</td>
+                        ))}
+                      </tr>
+                      <tr className="border-t border-criterio-gris3/30">
+                        <td className="text-criterio-texto/50 uppercase tracking-widest pr-4 py-2 font-bold">Total</td>
+                        {dias.map(([fecha, d]) => (
+                          <td key={fecha} className={`text-center px-3 py-2 font-bold whitespace-nowrap ${d.ventas-d.gastos>=0?'text-criterio-acento':'text-red-400'}`}>
+                            {formatPeso(d.ventas-d.gastos)}
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                )
+              })()}
             </div>
 
             {/* Control caja */}
