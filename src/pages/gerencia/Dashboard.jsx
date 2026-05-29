@@ -131,19 +131,18 @@ export default function GerenciaDashboard() {
 
   useEffect(() => {
     if (projInicializado || movimientos.length === 0) return
-    const totalV=(totales.venta_efectivo||0)+(totales.venta_transferencia||0)
+    // Calculate totales inline to avoid initialization order issues
+    const tots = movimientos.reduce((acc,m) => { acc[m.tipo]=(acc[m.tipo]||0)+Number(m.monto); return acc }, {})
+    const totalV=(tots.venta_efectivo||0)+(tots.venta_transferencia||0)
+    const totalGV=(tots.gasto_efectivo||0)+(tots.gasto_transferencia||0)
     const cantV=movimientos.filter(m=>m.tipo.startsWith('venta')).length
     const dias=new Date().getDate()
     const ticketReal=cantV>0?Math.round(totalV/cantV):160000
     const clientesReal=cantV>0&&dias>0?Math.max(1,Math.round(cantV/dias)):4
-    const costosReal=alquiler+servicios+otros+sueldoEmp+sueldoEncargada
-    const totalGastosVar=(totales.gasto_efectivo||0)+(totales.gasto_transferencia||0)
-    const dias2=new Date().getDate()
-    const gastosVarDiario=dias2>0?Math.round(totalGastosVar/dias2):0
-    const gastosVarMensual=gastosVarDiario*25
-    setProj(p=>({...p, ticket:ticketReal, clientes:clientesReal, costos:costosReal>0?Math.round(costosReal):5500000, gastos_var:gastosVarMensual}))
+    const gastosVarMensual=dias>0?Math.round(totalGV/dias)*25:0
+    setProj(p=>({...p, ticket:ticketReal, clientes:clientesReal, gastos_var:gastosVarMensual}))
     setProjInicializado(true)
-  }, [movimientos, projInicializado, totales, alquiler, servicios, otros, sueldoEmp, sueldoEncargada])
+  }, [movimientos, projInicializado])
 
   // Totales mes
   const totales = movimientos.reduce((acc,m) => { acc[m.tipo]=(acc[m.tipo]||0)+Number(m.monto); return acc }, {})
@@ -793,8 +792,9 @@ export default function GerenciaDashboard() {
                   const totalV=(totales.venta_efectivo||0)+(totales.venta_transferencia||0)
                   const cantV=movimientos.filter(m=>m.tipo.startsWith('venta')).length
                   const dias=new Date().getDate()
-                  const totalGV=(totales.gasto_efectivo||0)+(totales.gasto_transferencia||0)
-                  const gastosVarD=dias>0?Math.round(totalGV/dias):0
+                  const tots2=movimientos.reduce((acc,m)=>{acc[m.tipo]=(acc[m.tipo]||0)+Number(m.monto);return acc},{})
+                  const totalGV2=(tots2.gasto_efectivo||0)+(tots2.gasto_transferencia||0)
+                  const gastosVarD=dias>0?Math.round(totalGV2/dias):0
                   setProj(p=>({...p,
                     ticket:cantV>0?Math.round(totalV/cantV):160000,
                     clientes:cantV>0&&dias>0?Math.max(1,Math.round(cantV/dias)):4,
