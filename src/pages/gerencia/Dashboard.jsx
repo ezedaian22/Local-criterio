@@ -453,6 +453,7 @@ export default function GerenciaDashboard() {
                 ['venta','Ventas'],
                 ['gasto','Gastos'],
                 ['mercaderia_recibida','Mercadería'],
+                ['entrega','Entregas a dueño'],
               ].map(([k,l])=>(
                 <button key={k} onClick={()=>setFiltroMov(k)}
                   className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-colors ${filtroMov===k?'bg-criterio-acento text-criterio-negro':'bg-criterio-gris2 text-criterio-texto/60 hover:text-criterio-texto'}`}>
