@@ -116,6 +116,22 @@ export default function GerenciaDashboard() {
 
   useEffect(() => { cargarMovimientos(); cargarGastosFijos(); cargarAnual(); cargarConfig() }, [cargarMovimientos, cargarGastosFijos, cargarAnual, cargarConfig])
 
+  useEffect(() => {
+    if (projInicializado || movimientos.length === 0) return
+    const totalV=(totales.venta_efectivo||0)+(totales.venta_transferencia||0)
+    const cantV=movimientos.filter(m=>m.tipo.startsWith('venta')).length
+    const dias=new Date().getDate()
+    const ticketReal=cantV>0?Math.round(totalV/cantV):160000
+    const clientesReal=cantV>0&&dias>0?Math.max(1,Math.round(cantV/dias)):4
+    const costosReal=alquiler+servicios+otros+sueldoEmp+sueldoEncargada
+    const totalGastosVar=(totales.gasto_efectivo||0)+(totales.gasto_transferencia||0)
+    const dias2=new Date().getDate()
+    const gastosVarDiario=dias2>0?Math.round(totalGastosVar/dias2):0
+    const gastosVarMensual=gastosVarDiario*25
+    setProj(p=>({...p, ticket:ticketReal, clientes:clientesReal, costos:costosReal>0?Math.round(costosReal):5500000, gastos_var:gastosVarMensual}))
+    setProjInicializado(true)
+  }, [movimientos, projInicializado, totales, alquiler, servicios, otros, sueldoEmp, sueldoEncargada])
+
   // Totales mes
   const totales = movimientos.reduce((acc,m) => { acc[m.tipo]=(acc[m.tipo]||0)+Number(m.monto); return acc }, {})
   const ventasEf=totales.venta_efectivo||0, ventasTrans=totales.venta_transferencia||0
@@ -228,10 +244,12 @@ export default function GerenciaDashboard() {
     }
   }
 
-  const [proj, setProj] = useState({ clientes:4, ticket:160000, margen:43, costos:5500000 })
+  const [proj, setProj] = useState({ clientes:4, ticket:160000, margen:43, costos:5500000, gastos_var:0 })
+  const [projInicializado, setProjInicializado] = useState(false)
   const ventaProyectada=proj.clientes*proj.ticket*25
-  const gananciaProyectada=ventaProyectada*(proj.margen/100)-proj.costos
-  const equilibrio=proj.costos/(proj.margen/100)
+  const costoTotal=proj.costos+proj.gastos_var
+  const gananciaProyectada=ventaProyectada*(proj.margen/100)-costoTotal
+  const equilibrio=costoTotal/(proj.margen/100)
 
   return (
     <Layout>
@@ -722,13 +740,32 @@ export default function GerenciaDashboard() {
         {tab==='proyeccion' && (
           <div className="flex flex-col gap-4">
             <div className="card">
-              <h3 className="font-display text-lg font-semibold text-criterio-blanco mb-4">Calculadora de rentabilidad</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-display text-lg font-semibold text-criterio-blanco">Calculadora de rentabilidad</h3>
+                <button onClick={()=>{
+                  const totalV=(totales.venta_efectivo||0)+(totales.venta_transferencia||0)
+                  const cantV=movimientos.filter(m=>m.tipo.startsWith('venta')).length
+                  const dias=new Date().getDate()
+                  const totalGV=(totales.gasto_efectivo||0)+(totales.gasto_transferencia||0)
+                  const gastosVarD=dias>0?Math.round(totalGV/dias):0
+                  setProj(p=>({...p,
+                    ticket:cantV>0?Math.round(totalV/cantV):160000,
+                    clientes:cantV>0&&dias>0?Math.max(1,Math.round(cantV/dias)):4,
+                    costos:Math.round(alquiler+servicios+otros+sueldoEmp+sueldoEncargada)||5500000,
+                    gastos_var:gastosVarD*25
+                  }))
+                }} className="text-xs font-mono text-criterio-acento border border-criterio-acento/30 px-3 py-1.5 rounded-lg hover:border-criterio-acento">
+                  ↺ Valores reales
+                </button>
+              </div>
+              <p className="text-criterio-texto/40 font-mono text-xs mb-4">Arranca con tus datos reales del mes. Modificá los sliders para simular escenarios.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {[
                   {key:'clientes',label:'Clientes por día',min:1,max:20,step:1,suffix:''},
                   {key:'ticket',label:'Ticket promedio ($)',min:10000,max:1000000,step:10000,suffix:''},
                   {key:'margen',label:'Margen (%)',min:10,max:80,step:1,suffix:'%'},
-                  {key:'costos',label:'Costos fijos ($)',min:1000000,max:20000000,step:100000,suffix:''},
+                  {key:'costos',label:'Costos fijos ($)',min:0,max:20000000,step:100000,suffix:''},
+                  {key:'gastos_var',label:'Gastos variables proyectados ($)',min:0,max:5000000,step:10000,suffix:''},
                 ].map(({key,label,min,max,step,suffix})=>(
                   <div key={key}>
                     <div className="flex justify-between mb-2">
@@ -740,10 +777,15 @@ export default function GerenciaDashboard() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="card"><p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Venta mensual proyectada</p><p className="text-xl font-display font-semibold text-criterio-acento mt-1">{formatPesoFull(ventaProyectada)}</p></div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="card"><p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Venta proyectada</p><p className="text-xl font-display font-semibold text-criterio-acento mt-1">{formatPesoFull(ventaProyectada)}</p></div>
+              <div className="card">
+                <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Costo total</p>
+                <p className="text-xl font-display text-red-400 mt-1">{formatPesoFull(costoTotal)}</p>
+                <p className="text-[10px] font-mono text-criterio-texto/30 mt-1">fijos + variables</p>
+              </div>
               <div className="card"><p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Punto de equilibrio</p><p className="text-xl font-display text-criterio-texto mt-1">{formatPesoFull(equilibrio)}</p></div>
-              <div className={`card col-span-2 sm:col-span-1 border ${gananciaProyectada>=0?'border-green-700':'border-red-700'}`}>
+              <div className={`card border ${gananciaProyectada>=0?'border-green-700':'border-red-700'}`}>
                 <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Ganancia neta</p>
                 <p className={`text-2xl font-display font-bold mt-1 ${gananciaProyectada>=0?'text-green-400':'text-red-400'}`}>{formatPesoFull(gananciaProyectada)}</p>
               </div>
