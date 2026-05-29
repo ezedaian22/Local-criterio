@@ -49,6 +49,8 @@ export default function GerenciaDashboard() {
   const [cmpAnio2, setCmpAnio2] = useState(ANO)
   const [cmpData1, setCmpData1] = useState([])
   const [cmpData2, setCmpData2] = useState([])
+  const [proj, setProj] = useState({ clientes:4, ticket:160000, margen:43, costos:5500000, gastos_var:0 })
+  const [projInicializado, setProjInicializado] = useState(false)
   const [cmpPer1Desde, setCmpPer1Desde] = useState(0)
   const [cmpPer1Hasta, setCmpPer1Hasta] = useState(2)
   const [cmpPer2Desde, setCmpPer2Desde] = useState(3)
@@ -274,8 +276,6 @@ export default function GerenciaDashboard() {
     }
   }
 
-  const [proj, setProj] = useState({ clientes:4, ticket:160000, margen:43, costos:5500000, gastos_var:0 })
-  const [projInicializado, setProjInicializado] = useState(false)
   const ventaProyectada=proj.clientes*proj.ticket*25
   const costoTotal=proj.costos+proj.gastos_var
   const gananciaProyectada=ventaProyectada*(proj.margen/100)-costoTotal
