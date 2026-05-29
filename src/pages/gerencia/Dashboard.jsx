@@ -279,20 +279,20 @@ export default function GerenciaDashboard() {
               ))}
             </div>
 
-            <div className={`card py-3 border-2 ${resultado>=0?'border-green-700':'border-red-700'}`}>
+            <div className={`card border-2 ${resultado>=0?'border-green-700':'border-red-700'}`}>
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Resultado neto</p>
-                  <p className={`text-2xl font-display font-bold mt-0.5 ${resultado>=0?'text-green-400':'text-red-400'}`}>{formatPesoFull(resultado)}</p>
+                  <p className={`text-xl font-display font-bold mt-1 ${resultado>=0?'text-green-400':'text-red-400'}`}>{formatPesoFull(resultado)}</p>
                 </div>
                 <div className="flex gap-6 text-right">
                   <div>
                     <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Ingresos</p>
-                    <p className="text-lg font-display text-green-400 mt-0.5">{formatPesoFull(totalVentas)}</p>
+                    <p className="text-lg font-display text-green-400 mt-1">{formatPesoFull(totalVentas)}</p>
                   </div>
                   <div>
                     <p className="text-xs font-mono text-criterio-texto/60 uppercase tracking-widest">Egresos</p>
-                    <p className="text-lg font-display text-red-400 mt-0.5">{formatPesoFull(totalEgresos)}</p>
+                    <p className="text-lg font-display text-red-400 mt-1">{formatPesoFull(totalEgresos)}</p>
                   </div>
                 </div>
               </div>
