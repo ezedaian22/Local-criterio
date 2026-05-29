@@ -17,7 +17,7 @@ function formatPesoFull(n) {
 }
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-const AÑO = 2026
+const ANO = 2026
 const TABS = ['resumen','movimientos','gastos','anual','comparar','proyeccion','config']
 const TAB_LABELS = {resumen:'Resumen',movimientos:'Movimientos',gastos:'Gastos Fijos',anual:'Anual',comparar:'Comparar',proyeccion:'Proyección',config:'Config'}
 
@@ -45,8 +45,8 @@ export default function GerenciaDashboard() {
   const [cmpModo, setCmpModo] = useState('mes') // mes | anio | periodo
   const [cmpMes1, setCmpMes1] = useState(hoy.getMonth() > 0 ? hoy.getMonth()-1 : 0)
   const [cmpMes2, setCmpMes2] = useState(hoy.getMonth())
-  const [cmpAnio1, setCmpAnio1] = useState(AÑO-1)
-  const [cmpAnio2, setCmpAnio2] = useState(AÑO)
+  const [cmpAnio1, setCmpAnio1] = useState(ANO-1)
+  const [cmpAnio2, setCmpAnio2] = useState(ANO)
   const [cmpData1, setCmpData1] = useState([])
   const [cmpData2, setCmpData2] = useState([])
   const [cmpPer1Desde, setCmpPer1Desde] = useState(0)
@@ -63,7 +63,7 @@ export default function GerenciaDashboard() {
 
   const cargarMovimientos = useCallback(async () => {
     if (!localSel) return
-    const mesDate = new Date(AÑO, mesIdx, 1)
+    const mesDate = new Date(ANO, mesIdx, 1)
     const {data} = await supabase.from('movimientos').select('*')
       .eq('local_id', localSel.id)
       .gte('fecha', format(startOfMonth(mesDate),'yyyy-MM-dd'))
@@ -75,7 +75,7 @@ export default function GerenciaDashboard() {
   const cargarGastosFijos = useCallback(async () => {
     if (!localSel) return
     const {data} = await supabase.from('gastos_fijos').select('*')
-      .eq('local_id', localSel.id).eq('mes', mesIdx+1).eq('anio', AÑO).single()
+      .eq('local_id', localSel.id).eq('mes', mesIdx+1).eq('anio', ANO).single()
     if (data) {
       setGastosFijos(data)
       setFormGF({ alquiler: String(data.alquiler||''), servicios: String(data.servicios||''), otros: String(data.otros||''), sueldo_empleado_fabrica: String(data.sueldo_empleado_fabrica||''), sueldo_minimo_encargada: String(data.sueldo_minimo_encargada||'1500000') })
@@ -89,7 +89,7 @@ export default function GerenciaDashboard() {
   const cargarAnual = useCallback(async () => {
     if (!localSel) return
     const {data} = await supabase.from('movimientos').select('fecha,tipo,monto')
-      .eq('local_id', localSel.id).gte('fecha',`${AÑO}-01-01`).lte('fecha',`${AÑO}-12-31`)
+      .eq('local_id', localSel.id).gte('fecha',`${ANO}-01-01`).lte('fecha',`${ANO}-12-31`)
     const porMes = MESES.map((mes,i) => ({ mes, ventas:0, gastos:0, mercaderia:0, entregado:0, cantVentas:0 }))
     ;(data||[]).forEach(m => {
       const mi = new Date(m.fecha+'T12:00:00').getMonth()
@@ -110,7 +110,7 @@ export default function GerenciaDashboard() {
   const cargarMesesCerrados = useCallback(async () => {
     if (!localSel) return
     const {data} = await supabase.from('gastos_fijos').select('mes,anio,cerrado,fecha_cierre')
-      .eq('local_id', localSel.id).eq('anio', AÑO)
+      .eq('local_id', localSel.id).eq('anio', ANO)
     if (data) {
       const map = {}
       data.forEach(d => { map[d.mes] = d.cerrado })
@@ -172,10 +172,10 @@ export default function GerenciaDashboard() {
   const stockLocal=mercaderia-totalVentas+devolucion
 
   async function cerrarMes() {
-    if (!confirm(`¿Cerrar ${MESES[mesIdx]} ${AÑO}? Una vez cerrado no se podrá editar.`)) return
+    if (!confirm(`¿Cerrar ${MESES[mesIdx]} ${ANO}? Una vez cerrado no se podrá editar.`)) return
     setCerrando(true)
     // First save current gastos fijos if not saved
-    const payload = { local_id:localSel.id, mes:mesIdx+1, anio:AÑO, alquiler:Number(formGF.alquiler)||0, servicios:Number(formGF.servicios)||0, otros:Number(formGF.otros)||0, sueldo_empleado_fabrica:Number(formGF.sueldo_empleado_fabrica)||0, sueldo_minimo_encargada:Number(formGF.sueldo_minimo_encargada)||1500000, cerrado:true, fecha_cierre:new Date().toISOString(), updated_at:new Date().toISOString() }
+    const payload = { local_id:localSel.id, mes:mesIdx+1, anio:ANO, alquiler:Number(formGF.alquiler)||0, servicios:Number(formGF.servicios)||0, otros:Number(formGF.otros)||0, sueldo_empleado_fabrica:Number(formGF.sueldo_empleado_fabrica)||0, sueldo_minimo_encargada:Number(formGF.sueldo_minimo_encargada)||1500000, cerrado:true, fecha_cierre:new Date().toISOString(), updated_at:new Date().toISOString() }
     if (gastosFijos?.id) {
       await supabase.from('gastos_fijos').update(payload).eq('id', gastosFijos.id)
     } else {
@@ -184,14 +184,14 @@ export default function GerenciaDashboard() {
     await cargarGastosFijos()
     await cargarMesesCerrados()
     setCerrando(false)
-    alert(`✅ ${MESES[mesIdx]} ${AÑO} cerrado correctamente.`)
+    alert(`✅ ${MESES[mesIdx]} ${ANO} cerrado correctamente.`)
   }
 
   async function guardarGF(e) {
     e.preventDefault()
     if (mesesCerrados[mesIdx+1]) { alert('Este mes ya está cerrado y no se puede editar.'); return }
     setGuardandoGF(true)
-    const payload = { local_id:localSel.id, mes:mesIdx+1, anio:AÑO, alquiler:Number(formGF.alquiler)||0, servicios:Number(formGF.servicios)||0, otros:Number(formGF.otros)||0, sueldo_empleado_fabrica:Number(formGF.sueldo_empleado_fabrica)||0, sueldo_minimo_encargada:Number(formGF.sueldo_minimo_encargada)||1500000, updated_at:new Date().toISOString() }
+    const payload = { local_id:localSel.id, mes:mesIdx+1, anio:ANO, alquiler:Number(formGF.alquiler)||0, servicios:Number(formGF.servicios)||0, otros:Number(formGF.otros)||0, sueldo_empleado_fabrica:Number(formGF.sueldo_empleado_fabrica)||0, sueldo_minimo_encargada:Number(formGF.sueldo_minimo_encargada)||1500000, updated_at:new Date().toISOString() }
     if (gastosFijos?.id) await supabase.from('gastos_fijos').update(payload).eq('id',gastosFijos.id)
     else await supabase.from('gastos_fijos').insert(payload)
     await cargarGastosFijos(); setGuardandoGF(false)
@@ -245,13 +245,13 @@ export default function GerenciaDashboard() {
     }
 
     if (cmpModo==='mes') {
-      const d1 = await cargarPeriodo(format(startOfMonth(new Date(AÑO,cmpMes1,1)),'yyyy-MM-dd'), format(endOfMonth(new Date(AÑO,cmpMes1,1)),'yyyy-MM-dd'))
-      const d2 = await cargarPeriodo(format(startOfMonth(new Date(AÑO,cmpMes2,1)),'yyyy-MM-dd'), format(endOfMonth(new Date(AÑO,cmpMes2,1)),'yyyy-MM-dd'))
+      const d1 = await cargarPeriodo(format(startOfMonth(new Date(ANO,cmpMes1,1)),'yyyy-MM-dd'), format(endOfMonth(new Date(ANO,cmpMes1,1)),'yyyy-MM-dd'))
+      const d2 = await cargarPeriodo(format(startOfMonth(new Date(ANO,cmpMes2,1)),'yyyy-MM-dd'), format(endOfMonth(new Date(ANO,cmpMes2,1)),'yyyy-MM-dd'))
       setCmpData1([{ name:MESES[cmpMes1], ...d1 }]); setCmpData2([{ name:MESES[cmpMes2], ...d2 }])
     } else if (cmpModo==='periodo') {
       const cargarPeriodoRange = async (desdeIdx, hastaIdx) => {
-        const desde = format(startOfMonth(new Date(AÑO,desdeIdx,1)),'yyyy-MM-dd')
-        const hasta = format(endOfMonth(new Date(AÑO,hastaIdx,1)),'yyyy-MM-dd')
+        const desde = format(startOfMonth(new Date(ANO,desdeIdx,1)),'yyyy-MM-dd')
+        const hasta = format(endOfMonth(new Date(ANO,hastaIdx,1)),'yyyy-MM-dd')
         const {data} = await supabase.from('movimientos').select('fecha,tipo,monto')
           .eq('local_id',localSel.id).gte('fecha',desde).lte('fecha',hasta)
         const ventas=(data||[]).filter(m=>m.tipo.startsWith('venta')).reduce((s,m)=>s+Number(m.monto),0)
@@ -299,7 +299,7 @@ export default function GerenciaDashboard() {
           <select value={mesIdx} onChange={e=>setMesIdx(Number(e.target.value))} className="w-auto">
             {MESES.map((m,i)=>(
               <option key={i} value={i}>
-                {mesesCerrados[i+1] ? '✅' : '○'} {m} {AÑO}
+                {mesesCerrados[i+1] ? '✅' : '○'} {m} {ANO}
               </option>
             ))}
           </select>
@@ -548,7 +548,7 @@ export default function GerenciaDashboard() {
         {/* GASTOS FIJOS */}
         {tab==='gastos' && (
           <div className="card">
-            <h3 className="font-display text-lg font-semibold text-criterio-blanco mb-4">Gastos fijos — {MESES[mesIdx]} {AÑO}</h3>
+            <h3 className="font-display text-lg font-semibold text-criterio-blanco mb-4">Gastos fijos — {MESES[mesIdx]} {ANO}</h3>
             <form onSubmit={guardarGF} className="flex flex-col gap-4">
               {[['alquiler','Alquiler ($)'],['servicios','Servicios / Expensas ($)'],['otros','Otros gastos fijos ($)'],['sueldo_empleado_fabrica','Sueldo Empleado Fábrica ($)'],['sueldo_minimo_encargada','Sueldo Mínimo Encargada ($)']].map(([k,l])=>(
                 <div key={k}>
@@ -588,7 +588,7 @@ export default function GerenciaDashboard() {
         {tab==='anual' && (
           <div className="flex flex-col gap-4">
             <div className="card">
-              <h3 className="font-display text-lg font-semibold text-criterio-blanco mb-1">Ventas por mes — {AÑO}</h3>
+              <h3 className="font-display text-lg font-semibold text-criterio-blanco mb-1">Ventas por mes — {ANO}</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={resumenAnual}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
@@ -651,13 +651,13 @@ export default function GerenciaDashboard() {
                   <div>
                     <label className="text-xs font-mono text-criterio-texto/50 uppercase tracking-widest block mb-2">Mes 1</label>
                     <select value={cmpMes1} onChange={e=>setCmpMes1(Number(e.target.value))}>
-                      {MESES.map((m,i)=><option key={i} value={i}>{m} {AÑO}</option>)}
+                      {MESES.map((m,i)=><option key={i} value={i}>{m} {ANO}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-xs font-mono text-criterio-texto/50 uppercase tracking-widest block mb-2">Mes 2</label>
                     <select value={cmpMes2} onChange={e=>setCmpMes2(Number(e.target.value))}>
-                      {MESES.map((m,i)=><option key={i} value={i}>{m} {AÑO}</option>)}
+                      {MESES.map((m,i)=><option key={i} value={i}>{m} {ANO}</option>)}
                     </select>
                   </div>
                 </div>
