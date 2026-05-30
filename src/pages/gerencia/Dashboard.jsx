@@ -553,6 +553,7 @@ Los movimientos del resto del mes siguen disponibles.`)
                 if (filtroMov === 'gasto') return m.tipo.startsWith('gasto')
                 return m.tipo === filtroMov
               })
+              const totalFiltrado = filtrados.reduce((s,m) => s + Number(m.monto), 0)
               return filtrados.length === 0 ? (
                 <div className="card text-center py-6"><p className="text-criterio-texto/30 font-mono text-sm">Sin movimientos</p></div>
               ) : (
