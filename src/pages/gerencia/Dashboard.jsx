@@ -202,8 +202,7 @@ export default function GerenciaDashboard() {
       `Solo se bloquea la edición de gastos fijos.`,
       ``,
       `¿Confirmar cierre?`,
-    ].join('
-')
+    ].join('\n')
 
     if (!confirm(resumen)) return
     setCerrando(true)
