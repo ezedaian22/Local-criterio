@@ -555,7 +555,19 @@ Los movimientos del resto del mes siguen disponibles.`)
               })
               return filtrados.length === 0 ? (
                 <div className="card text-center py-6"><p className="text-criterio-texto/30 font-mono text-sm">Sin movimientos</p></div>
-              ) : filtrados.map(mov => {
+              ) : (
+                <>
+                  {filtroMov !== 'todos' && (
+                    <div className="flex items-center justify-between px-4 py-2 bg-criterio-gris2 rounded-xl border border-criterio-gris3">
+                      <span className="font-mono text-xs text-criterio-texto/50 uppercase tracking-widest">
+                        {filtrados.length} movimiento{filtrados.length !== 1 ? 's' : ''}
+                      </span>
+                      <span className="font-mono font-bold text-criterio-acento text-lg">
+                        {formatPesoFull(totalFiltrado)}
+                      </span>
+                    </div>
+                  )}
+                  {filtrados.map(mov => {
                 const cfg=TIPO_CONFIG[mov.tipo]||{label:mov.tipo,color:'bg-gray-900/40 text-gray-400'}
                 return (
                   <div key={mov.id} className="bg-criterio-gris border border-criterio-gris3 rounded-xl flex items-center justify-between gap-3 px-4 py-2.5">
@@ -571,7 +583,9 @@ Los movimientos del resto del mes siguen disponibles.`)
                     </div>
                   </div>
                 )
-              })
+              })}
+                </>
+              )
             })()}
           </div>
         )}
